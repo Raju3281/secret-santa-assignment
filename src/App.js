@@ -1,6 +1,5 @@
-import logo from './logo.svg';
 import './App.css';
-import SecretSanta from './SecretSanta';
+import SecretSanta from './components/SecretSanta';
 
 function App() {
   return (
