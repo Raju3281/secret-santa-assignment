@@ -3,6 +3,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { assignSecretSanta, removeDuplicateGivers } from "./Utils";
 
 export default function SecretSanta() {
   const [employees, setEmployees] = useState([]);
@@ -13,11 +14,9 @@ export default function SecretSanta() {
   const [key2,setKey2]=useState(120)
   // Handle file upload & parse XLSX
   const handleFileUpload = (event, isPrevious) => {
-    console.log(event)
     if(event.target.files){
       let fileName=event.target.files?.[0].name
          let xlsx=fileName.substring(fileName.length,fileName.length-4)
-         console.log("xlsx",xlsx)
          if(xlsx!=='xlsx'){
           //reset value
           if(isPrevious){
@@ -31,7 +30,6 @@ export default function SecretSanta() {
     }
     const file = event.target.files?.[0];
     if (!file) return;
-  console.log("previousAssignments",previousAssignments)
     const reader = new FileReader();
     reader.readAsBinaryString(file);
     reader.onload = (e) => {
@@ -40,7 +38,6 @@ export default function SecretSanta() {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const parsedData = XLSX.utils.sheet_to_json(sheet);
-      console.log("parsedData",parsedData)
       if (isPrevious) {
         setPreviousAssignments(
           parsedData.map((p) => ({
@@ -58,72 +55,12 @@ export default function SecretSanta() {
       }
     };
   };
-  const assignSecretSanta=(participants, lastYearPairs)=>{
-    let receivers = [...participants]; 
-    let assignments = [];
-
-    function isValidPair(giver, receiver) {
-        if (giver === receiver) return false; // Avoid self-assignment
-
-        // Avoid last year's pair
-        return !lastYearPairs.some(
-            (pair) => pair.giver === giver && pair.receiver === receiver
-        );
-    }
-
-    let attempts = 0;
-    let maxAttempts = 500; // to prevent infinite loops
-
-    while (attempts < maxAttempts) {
-        receivers = [...participants].sort(() => Math.random() - 0.5); // Shuffle
-
-        let isValid = true;
-        assignments = [];
-
-        for (let i = 0; i < participants.length; i++) {
-            let giver = participants[i];
-            let receiver = receivers[i];
-
-            if (!isValidPair(giver, receiver)) {
-                isValid = false;
-                break;
-            }
-            assignments.push({
-              giverName: giver.name,
-              giverEmail: giver.email,
-              receiverName: receiver.name,
-              receiverEmail: receiver.email,
-            });
-        }
-
-        if (isValid) break; // Found a valid set
-
-        attempts++;
-    }
-
-    if (attempts === maxAttempts) {
-        throw new Error("Couldn't find a valid assignment. Try again.");
-    }
-
-    return assignments;
-}
-function removeDuplicateGivers(arr) {
-  const uniqueGivers = new Map();
-
-  arr.forEach(obj => {
-      if (!uniqueGivers.has(obj.giverName)) {
-          uniqueGivers.set(obj.giverName, obj);
-      }
-  });
-
-  return Array.from(uniqueGivers.values());
-}
+ 
   // Generate Secret Santa Assignments
   const generateAssignments = () => {
     const presentEmp = Array.from(new Map(employees.map(obj => [obj.name, obj])).values());
     const prevEmp=removeDuplicateGivers(previousAssignments)
     const result=assignSecretSanta(presentEmp,prevEmp)
-    console.log("Result",result)
     setNewAssignments(result)
   };
 
